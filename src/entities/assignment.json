@@ -1,0 +1,46 @@
+{
+    "name": "Assignment",
+    "type": "object",
+    "properties": {
+        "title": {
+            "type": "string",
+            "description": "Assignment title"
+        },
+        "subject": {
+            "type": "string",
+            "description": "Subject name"
+        },
+        "description": {
+            "type": "string",
+            "description": "Full assignment description"
+        },
+        "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Due date"
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "in_progress",
+                "completed"
+            ],
+            "default": "pending"
+        },
+        "priority": {
+            "type": "string",
+            "enum": [
+                "low",
+                "medium",
+                "high"
+            ],
+            "default": "medium"
+        }
+    },
+    "required": [
+        "title",
+        "subject",
+        "due_date"
+    ]
+}

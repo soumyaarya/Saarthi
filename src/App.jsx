@@ -1,0 +1,31 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
+import Assignments from './pages/Assignments'
+import AssignmentDetail from './pages/AssignmentDetail'
+import UserNotRegisteredError from './components/UserNotRegisteredError'
+import Auth from './pages/Auth'
+import ErrorBoundary from './components/ErrorBoundary'
+
+const queryClient = new QueryClient()
+
+function App() {
+    return (
+        <QueryClientProvider client={queryClient}>
+            <ErrorBoundary>
+                <BrowserRouter>
+                    <Routes>
+                        <Route path="/" element={<Navigate to="/auth" replace />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/assignments" element={<Assignments />} />
+                        <Route path="/assignment" element={<AssignmentDetail />} />
+                        <Route path="/error" element={<UserNotRegisteredError />} />
+                    </Routes>
+                </BrowserRouter>
+            </ErrorBoundary>
+        </QueryClientProvider>
+    )
+}
+
+export default App
