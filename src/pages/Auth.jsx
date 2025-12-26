@@ -9,7 +9,9 @@ const Auth = () => {
     const [email, setEmail] = useState('');
     const [pin, setPin] = useState('');
     const [isListening, setIsListening] = useState(false);
+    const [isCommandListening, setIsCommandListening] = useState(false);
     const [statusData, setStatusData] = useState('');
+    const formRef = useRef(null);
 
     // Refs for touch gestures
     const touchStart = useRef(null);
@@ -82,7 +84,7 @@ const Auth = () => {
                 containerRef.current.focus();
             }
             // Speak instructions
-            speak("Welcome to Saarthi. Swipe Right for Sign Up. Swipe Left for Sign In. or use Arrow Keys.");
+            speak("Welcome to Saarthi. Press E to speak your email. Press P to speak your PIN. Press S to submit by voice. Use Arrow keys to switch between Sign In and Sign Up.");
         }
     }, [started]);
 
@@ -114,6 +116,9 @@ const Auth = () => {
 
     // Keyboard Handling
     const handleKeyDown = (e) => {
+        // Don't trigger shortcuts when typing in input fields
+        const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+
         if (e.key === 'ArrowRight') {
             setMode('signup');
             speak("Sign Up Mode");
@@ -121,6 +126,24 @@ const Auth = () => {
         if (e.key === 'ArrowLeft') {
             setMode('login');
             speak("Sign In Mode");
+        }
+
+        // Voice input shortcuts (only when not typing)
+        if (!isTyping) {
+            if (e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+                speak("Speak your email address");
+                setTimeout(() => startListening('email'), 1500);
+            }
+            if (e.key === 'p' || e.key === 'P') {
+                e.preventDefault();
+                speak("Speak your PIN");
+                setTimeout(() => startListening('pin'), 1500);
+            }
+            if (e.key === 's' || e.key === 'S') {
+                e.preventDefault();
+                startVoiceCommand();
+            }
         }
     };
 
@@ -160,6 +183,53 @@ const Auth = () => {
         recognition.onerror = () => {
             speak("Could not hear you. Please try again.");
             setIsListening(false);
+        };
+    };
+
+    // Voice Command for Form Submission
+    const startVoiceCommand = () => {
+        if (!('webkitSpeechRecognition' in window)) {
+            speak("Voice commands not supported in this browser.");
+            return;
+        }
+
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+
+        setIsCommandListening(true);
+        speak("Listening for command. Say Enter, Join, or Submit.");
+
+        setTimeout(() => {
+            recognition.start();
+        }, 1500); // Wait for the speak to finish
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.toLowerCase().trim();
+            setIsCommandListening(false);
+
+            // Check for submit commands
+            const submitCommands = ['enter', 'join', 'submit', 'login', 'sign in', 'sign up', 'go', 'proceed'];
+            const hasSubmitCommand = submitCommands.some(cmd => transcript.includes(cmd));
+
+            if (hasSubmitCommand) {
+                speak("Submitting form.");
+                // Trigger form submission
+                if (formRef.current) {
+                    formRef.current.requestSubmit();
+                }
+            } else {
+                speak(`Command not recognized: ${transcript}. Please say Enter or Join to submit.`);
+            }
+        };
+
+        recognition.onerror = () => {
+            speak("Could not hear the command. Please try again.");
+            setIsCommandListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsCommandListening(false);
         };
     };
 
@@ -269,7 +339,7 @@ const Auth = () => {
     return (
         <div
             ref={containerRef}
-            className="min-h-screen bg-black text-yellow-400 flex flex-col items-center justify-center p-6 space-y-8 outline-none"
+            className="min-h-screen bg-black text-yellow-400 flex flex-col items-center justify-center p-6 pb-32 space-y-8 outline-none relative"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -297,7 +367,7 @@ const Auth = () => {
                 )}
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="w-full max-w-md space-y-8">
+            <form ref={formRef} onSubmit={handleSubmit} noValidate className="w-full max-w-md space-y-8">
                 <div className="space-y-4">
                     <label htmlFor="email-input" className="text-4xl block font-bold">Email</label>
                     <div className="flex gap-4">
@@ -351,13 +421,31 @@ const Auth = () => {
                     </div>
                 </div>
 
-                <button
-                    type="submit"
-                    className="w-full bg-yellow-400 text-black font-black text-4xl p-8 rounded-2xl hover:scale-105 transition-transform"
-                >
-                    {mode === 'login' ? 'ENTER' : 'JOIN'}
-                </button>
+                <div className="flex gap-4">
+                    <button
+                        type="submit"
+                        className="flex-1 bg-yellow-400 text-black font-black text-4xl p-8 rounded-2xl hover:scale-105 transition-transform"
+                        aria-label={mode === 'login' ? 'Sign In Submit Button' : 'Sign Up Submit Button'}
+                    >
+                        {mode === 'login' ? 'ENTER' : 'JOIN'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={startVoiceCommand}
+                        className={`p-8 rounded-2xl transition-all ${isCommandListening ? 'bg-red-500 animate-pulse' : 'bg-yellow-400'} text-black`}
+                        aria-label="Voice Command - Say Enter or Join to submit"
+                    >
+                        <Mic size={48} />
+                    </button>
+                </div>
             </form>
+
+            {/* Voice Input Hint */}
+            <div className="text-center text-yellow-200 text-xl opacity-75 max-w-md space-y-2" aria-live="polite">
+                <p>⌨️ <strong>E</strong> = Email | <strong>P</strong> = PIN | <strong>S</strong> = Submit</p>
+                <p>🎤 Or tap the <strong>microphone buttons</strong> to speak</p>
+                <p>⬅️ ➡️ Arrow keys to switch Sign In / Sign Up</p>
+            </div>
 
             <div className="absolute bottom-10 flex gap-10 opacity-50">
                 <div className="flex flex-col items-center">
