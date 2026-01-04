@@ -22,6 +22,22 @@ export function stopSpeaking() {
     }
 }
 
+export function getMenuText(pathname) {
+    let menuText = `Available commands: 
+        Say "create assignment" to add a new assignment.
+        Say "open assignments" to view your assignments. 
+        Say "open dashboard" to go to the dashboard. 
+        Say "read page" to hear the current page content. 
+        Say "go back" to navigate back.`;
+
+    if (pathname === '/assignments' || pathname.includes('assignment')) {
+        menuText += ` Say "mark complete" to complete first pending assignment. Say "mark pending" to undo.`;
+    }
+
+    menuText += ` Say "stop speaking" to stop audio.`;
+    return menuText;
+}
+
 export default function VoiceController({ voiceEnabled, onCommand }) {
     const [isListening, setIsListening] = useState(false);
     const [isSupported, setIsSupported] = useState(true);
@@ -56,19 +72,7 @@ export default function VoiceController({ voiceEnabled, onCommand }) {
 
         // Menu
         if (lowerCommand.includes('menu') || lowerCommand.includes('help')) {
-            let menuText = `Available commands: 
-                        Say "create assignment" to add a new assignment.
-                        Say "open assignments" to view your assignments. 
-                        Say "open dashboard" to go to the dashboard. 
-                        Say "read page" to hear the current page content. 
-                        Say "go back" to navigate back.`;
-
-            if (location.pathname === '/assignments' || location.pathname.includes('assignment')) {
-                menuText += ` Say "mark complete" to complete first pending assignment. Say "mark pending" to undo.`;
-            }
-
-            menuText += ` Say "stop speaking" to stop audio.`;
-            speak(menuText);
+            speak(getMenuText(location.pathname));
             return;
         }
 
@@ -185,6 +189,16 @@ export default function VoiceController({ voiceEnabled, onCommand }) {
         };
 
         const handleGlobalKeyDown = (e) => {
+            // Press 'M' to speak menu commands
+            if (e.key.toLowerCase() === 'm' &&
+                voiceEnabled &&
+                !e.target.closest('input') &&
+                !e.target.closest('textarea')) {
+                e.preventDefault();
+                speak(getMenuText(location.pathname));
+                return;
+            }
+
             // Spacebar to toggle listening
             if ((e.code === 'Space' || e.code === 'Enter') &&
                 voiceEnabled &&

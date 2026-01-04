@@ -149,13 +149,51 @@ const startListening = (field) => {
 > "The Web Speech API has cross-browser issues:
 > 1. **Chrome uses `webkitSpeechRecognition`** – Need prefix check
 > 2. **Voices load asynchronously** – Need `onvoiceschanged` event
-> 3. **Garbage collection bug** – Utterance gets silenced if not stored"
+> 3. **Garbage collection bug** – Utterance gets silenced if not stored
+> 4. **Browser autoplay policy** – Speech blocked without user interaction"
 
-**Your workaround (Auth.jsx:57-58):**
+**Workaround 1 - Garbage Collection (Auth.jsx:57-58):**
 ```jsx
 // Store reference to prevent garbage collection
 window.currentUtterance = utterance;
 ```
+
+**Workaround 2 - Autoplay Policy:**
+> "Modern browsers block automatic audio/speech on page load to prevent annoying autoplay.
+> The `speechSynthesis.speak()` call is **silently ignored** if there's no prior user gesture (click, tap, keypress).
+> 
+> **Solution:** We require user interaction first (click/Enter to start), then speech works.
+> For screen reader users, we use **ARIA live regions** which don't need user interaction – 
+> screen readers (like NVDA) read `aria-live="assertive"` content automatically on page load."
+
+**Your code (Auth.jsx – Welcome Screen):**
+```jsx
+// Welcome screen requires user click/Enter to proceed
+<main
+    onClick={() => setStarted(true)}
+    onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            setStarted(true);  // After this, speech works!
+        }
+    }}
+
+>
+    {/* ARIA Live Region - Screen readers read this WITHOUT user click */}
+    <div role="alert" aria-live="assertive" aria-atomic="true" className="sr-only">
+        Welcome to Saarthi! Press Enter or Space to start.
+    </div>
+    
+    <h1>Welcome to Saarthi!</h1>
+    <button>Start</button>
+</main>
+```
+
+**Key Insight:**
+| Method | Works on First Load? | User Interaction Needed? |
+|--------|---------------------|--------------------------|
+| `speechSynthesis.speak()` | ❌ No (blocked) | Yes |
+| ARIA `aria-live="assertive"` | ✅ Yes | No |
+| Screen Reader (NVDA) | ✅ Yes | No |
 
 ---
 

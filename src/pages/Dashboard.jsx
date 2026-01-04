@@ -65,7 +65,7 @@ export default function Dashboard() {
 
     const handleStartInteraction = () => {
         setHasInteracted(true);
-        speak("Welcome to Saarthi Dashboard. Speak menu for all commands.Click anywhere to speak");
+        speak("Welcome to Saarthi Dashboard. Press M to hear all commands. Click anywhere to speak.");
     };
 
     const handleVoiceCommand = (command) => {
@@ -125,7 +125,7 @@ export default function Dashboard() {
         >
             {/* Screen Reader Announcement - Native Accessibility */}
             <div aria-live="polite" aria-atomic="true" className="sr-only">
-                Welcome to Saarthi Dashboard. Press menu for all commands.
+                Welcome to Saarthi Dashboard. Press M to hear all commands.
             </div>
 
             {/* Skip Link */}
