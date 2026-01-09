@@ -8,7 +8,7 @@ export function cn(...inputs) {
 export function createPageUrl(page) {
     switch (page) {
         case 'Dashboard':
-            return '/';
+            return '/dashboard';
         case 'Assignments':
             return '/assignments';
         case 'AssignmentDetail':

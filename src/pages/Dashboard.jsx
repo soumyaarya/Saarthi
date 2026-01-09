@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { BookOpen, Calendar, CheckCircle2, Clock, Settings, Volume2, Plus } from 'lucide-react';
+import { BookOpen, Calendar, CheckCircle2, Clock, Settings, Volume2, Plus, LogOut } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +17,12 @@ import axios from 'axios';
 const DEFAULT_SETTINGS = {
     highContrast: false,
     fontSize: 16,
-    voiceEnabled: true
+    voiceEnabled: true,
+    screenReaderMode: false
 };
 
 export default function Dashboard() {
+    const navigate = useNavigate();
     const [settings, setSettings] = useState(() => {
         const saved = localStorage.getItem('accessibilitySettings');
         return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
@@ -65,7 +67,20 @@ export default function Dashboard() {
 
     const handleStartInteraction = () => {
         setHasInteracted(true);
-        speak("Welcome to Saarthi Dashboard. Press M to hear all commands. Click anywhere to speak.");
+        // Only speak if screen reader mode is OFF (user-triggered actions still speak)
+        if (!settings.screenReaderMode) {
+            speak("Welcome to Saarthi Dashboard. Press M or say Menu to hear all commands. Click anywhere to speak.");
+        }
+    };
+
+    const handleLogout = () => {
+        speak('Logging out. Goodbye!');
+        // Clear user session data
+        localStorage.removeItem('userInfo');
+        // Navigate to auth page after a brief delay for the speech
+        setTimeout(() => {
+            navigate('/auth');
+        }, 1000);
     };
 
     const handleVoiceCommand = (command) => {
@@ -77,6 +92,8 @@ export default function Dashboard() {
         } else if (command === 'create_assignment' || command.includes('create') || command.includes('new assignment')) {
             setCreateModalOpen(true);
             speak('Opening create assignment form. Fill in the title and subject, then say submit or click create.');
+        } else if (command.includes('logout') || command.includes('log out') || command.includes('sign out')) {
+            handleLogout();
         }
     };
 
@@ -125,7 +142,7 @@ export default function Dashboard() {
         >
             {/* Screen Reader Announcement - Native Accessibility */}
             <div aria-live="polite" aria-atomic="true" className="sr-only">
-                Welcome to Saarthi Dashboard. Press M to hear all commands.
+                Welcome to Saarthi Dashboard. Press M or say Menu to hear all commands.
             </div>
 
             {/* Skip Link */}
@@ -183,6 +200,17 @@ export default function Dashboard() {
                                     </div>
                                 </SheetContent>
                             </Sheet>
+
+                            <Button
+                                variant="outline"
+                                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                aria-label="Logout"
+                                onClick={handleLogout}
+                                onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Logout button')}
+                            >
+                                <LogOut className="h-5 w-5" aria-hidden="true" />
+                                <span className="hidden sm:inline">Logout</span>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -265,7 +293,7 @@ export default function Dashboard() {
                             to={createPageUrl('Assignments')}
                             className="block focus:outline-none focus:ring-4 focus:ring-indigo-300 rounded-lg"
                             aria-label="View all assignments"
-                            onFocus={() => settings.voiceEnabled && speak('View assignments button')}
+                            onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('View assignments button')}
                         >
                             <Card className="border-2 hover:border-indigo-500 hover:shadow-lg transition-all cursor-pointer">
                                 <CardContent className="p-6 flex items-center gap-4">
@@ -285,7 +313,7 @@ export default function Dashboard() {
                             role="button"
                             tabIndex={0}
                             aria-label="View calendar"
-                            onFocus={() => settings.voiceEnabled && speak('Calendar button')}
+                            onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Calendar button')}
                         >
                             <CardContent className="p-6 flex items-center gap-4">
                                 <div className="p-3 bg-purple-100 rounded-full">
@@ -306,7 +334,7 @@ export default function Dashboard() {
                             aria-label="Create new assignment"
                             onClick={openCreateModal}
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openCreateModal(); }}
-                            onFocus={() => settings.voiceEnabled && speak('Create new assignment button')}
+                            onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Create new assignment button')}
                         >
                             <CardContent className="p-6 flex items-center gap-4">
                                 <div className="p-3 bg-green-100 rounded-full">
@@ -350,7 +378,7 @@ export default function Dashboard() {
                                             className="block focus:outline-none focus:ring-4 focus:ring-indigo-300 rounded-lg"
                                             role="listitem"
                                             aria-label={`${assignment.title}, ${assignment.subject}, due ${dueDateFormatted}`}
-                                            onFocus={() => settings.voiceEnabled && speak(`${assignment.title}, due ${dueDateFormatted}`)}
+                                            onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak(`${assignment.title}, due ${dueDateFormatted}`)}
                                         >
                                             <Card className="border-2 hover:border-indigo-500 hover:shadow-lg transition-all">
                                                 <CardContent className="p-6">
@@ -449,7 +477,7 @@ export default function Dashboard() {
                                 className="w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 value={newAssignment.title}
                                 onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
-                                onFocus={() => settings.voiceEnabled && speak('Title field. Enter assignment title.')}
+                                onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Title field. Enter assignment title.')}
                                 placeholder="e.g., Math Homework Chapter 5"
                                 required
                                 aria-required="true"
@@ -466,7 +494,7 @@ export default function Dashboard() {
                                 className="w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 value={newAssignment.subject}
                                 onChange={(e) => setNewAssignment({ ...newAssignment, subject: e.target.value })}
-                                onFocus={() => settings.voiceEnabled && speak('Subject field. Enter the subject name.')}
+                                onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Subject field. Enter the subject name.')}
                                 placeholder="e.g., Mathematics"
                                 required
                                 aria-required="true"
@@ -483,7 +511,7 @@ export default function Dashboard() {
                                 className="w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 value={newAssignment.dueDate}
                                 onChange={(e) => setNewAssignment({ ...newAssignment, dueDate: e.target.value })}
-                                onFocus={() => settings.voiceEnabled && speak('Due date field. Select or type the due date.')}
+                                onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Due date field. Select or type the due date.')}
                             />
                         </div>
 
@@ -496,7 +524,7 @@ export default function Dashboard() {
                                 className="w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 value={newAssignment.priority}
                                 onChange={(e) => setNewAssignment({ ...newAssignment, priority: e.target.value })}
-                                onFocus={() => settings.voiceEnabled && speak('Priority field. Select low, medium, or high.')}
+                                onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Priority field. Select low, medium, or high.')}
                             >
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
@@ -513,7 +541,7 @@ export default function Dashboard() {
                                 className="w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[80px]"
                                 value={newAssignment.description}
                                 onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
-                                onFocus={() => settings.voiceEnabled && speak('Description field. Add any additional details.')}
+                                onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Description field. Add any additional details.')}
                                 placeholder="Add any additional details..."
                             />
                         </div>
@@ -526,7 +554,7 @@ export default function Dashboard() {
                                     setCreateModalOpen(false);
                                     speak('Cancelled. Modal closed.');
                                 }}
-                                onFocus={() => settings.voiceEnabled && speak('Cancel button')}
+                                onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Cancel button')}
                             >
                                 Cancel
                             </Button>
@@ -534,7 +562,7 @@ export default function Dashboard() {
                                 type="submit"
                                 className="bg-green-600 hover:bg-green-700 text-white"
                                 disabled={createAssignmentMutation.isPending}
-                                onFocus={() => settings.voiceEnabled && speak('Create assignment button. Press Enter to submit.')}
+                                onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Create assignment button. Press Enter to submit.')}
                             >
                                 {createAssignmentMutation.isPending ? 'Creating...' : 'Create Assignment'}
                             </Button>

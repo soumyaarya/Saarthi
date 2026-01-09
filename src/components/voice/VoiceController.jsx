@@ -28,7 +28,8 @@ export function getMenuText(pathname) {
         Say "open assignments" to view your assignments. 
         Say "open dashboard" to go to the dashboard. 
         Say "read page" to hear the current page content. 
-        Say "go back" to navigate back.`;
+        Say "go back" to navigate back.
+        Say "logout" or "sign out" to logout.`;
 
     if (pathname === '/assignments' || pathname.includes('assignment')) {
         menuText += ` Say "mark complete" to complete first pending assignment. Say "mark pending" to undo.`;

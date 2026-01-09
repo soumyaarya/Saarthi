@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Mic, ArrowRight, ArrowLeft, Accessibility } from 'lucide-react';
 import axios from 'axios';
 
 const Auth = () => {
@@ -21,11 +21,23 @@ const Auth = () => {
     const emailRef = useRef(null);
     const pinRef = useRef(null);
 
-    // Initial Greeting & Focus
     const [started, setStarted] = useState(false);
     const containerRef = useRef(null);
     const startRef = useRef(null);
     const headingRef = useRef(null);
+
+    // Screen Reader Mode - read from localStorage
+    const [screenReaderMode, setScreenReaderMode] = useState(() => {
+        const saved = localStorage.getItem('accessibilitySettings');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            return parsed.screenReaderMode || false;
+        }
+        return false;
+    });
+
+    // Track if user has interacted (to speak about toggle)
+    const [hasInteracted, setHasInteracted] = useState(false);
 
     const speak = (text) => {
         if ('speechSynthesis' in window) {
@@ -62,6 +74,112 @@ const Auth = () => {
         }
     };
 
+    // Wrapper that respects screenReaderMode for automatic announcements
+    const speakIfNoScreenReader = (text) => {
+        if (!screenReaderMode) {
+            speak(text);
+        }
+    };
+
+    // Toggle screen reader mode and save to localStorage
+    const toggleScreenReaderMode = () => {
+        const newValue = !screenReaderMode;
+        setScreenReaderMode(newValue);
+        // Update localStorage
+        const saved = localStorage.getItem('accessibilitySettings');
+        const settings = saved ? JSON.parse(saved) : {};
+        settings.screenReaderMode = newValue;
+        localStorage.setItem('accessibilitySettings', JSON.stringify(settings));
+    };
+
+    // Handle first interaction on welcome screen - speak about the toggle
+    const handleFirstInteraction = (e) => {
+        if (!hasInteracted) {
+            e.stopPropagation();
+            setHasInteracted(true);
+            speak("Welcome to Saarthi. If you use a screen reader, say Toggle to enable screen reader mode. To continue to sign in or sign up, click the Start button or say Start.");
+
+            // Start listening for "toggle" command after speech ends (longer delay)
+            setTimeout(() => {
+                startToggleListening();
+            }, 7000); // Wait longer for speech to finish
+        }
+    };
+
+    // Listen for "toggle" voice command on welcome screen
+    const startToggleListening = () => {
+        if (!('webkitSpeechRecognition' in window)) return;
+
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+
+        // Flag to prevent restart when start command is recognized
+        let shouldRestart = true;
+
+        try {
+            recognition.start();
+        } catch (e) {
+            // Recognition might already be running
+            return;
+        }
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.toLowerCase().trim();
+            console.log('Toggle recognition heard:', transcript);
+
+            if (transcript.includes('toggle') || transcript.includes('enable') || transcript.includes('disable') || transcript.includes('switch')) {
+                // Read current state from localStorage to avoid closure issues
+                const saved = localStorage.getItem('accessibilitySettings');
+                const settings = saved ? JSON.parse(saved) : {};
+                const currentState = settings.screenReaderMode || false;
+                const newState = !currentState;
+
+                // Update state and localStorage
+                setScreenReaderMode(newState);
+                settings.screenReaderMode = newState;
+                localStorage.setItem('accessibilitySettings', JSON.stringify(settings));
+
+                if (newState) {
+                    speak("Screen reader mode enabled. Click Start or say Start to continue.");
+                } else {
+                    speak("Screen reader mode disabled. Click Start or say Start to continue.");
+                }
+                // Restart listening for more commands
+                shouldRestart = false; // Prevent onend restart
+                setTimeout(() => startToggleListening(), 4000);
+            } else if (transcript.includes('start') || transcript.includes('continue') || transcript.includes('go') || transcript.includes('begin')) {
+                shouldRestart = false; // Stop restarting - we're navigating away
+                speak("Starting Saarthi.");
+                setTimeout(() => {
+                    setStarted(true);
+                }, 500);
+            } else {
+                speak("Say Toggle to switch screen reader mode, or click Start to continue.");
+                // Restart listening
+                shouldRestart = false; // Prevent onend restart
+                setTimeout(() => startToggleListening(), 3000);
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.log('Recognition error:', event.error);
+            shouldRestart = false;
+            // Restart listening after error (except for "not-allowed")
+            if (event.error !== 'not-allowed') {
+                setTimeout(() => startToggleListening(), 1000);
+            }
+        };
+
+        recognition.onend = () => {
+            // Only restart if we didn't process a valid command
+            if (shouldRestart) {
+                console.log('Recognition ended, restarting...');
+                setTimeout(() => startToggleListening(), 500);
+            }
+        };
+    };
+
     // Preload voices on mount (Chrome loads voices asynchronously)
     useEffect(() => {
         if ('speechSynthesis' in window) {
@@ -83,8 +201,8 @@ const Auth = () => {
             if (containerRef.current) {
                 containerRef.current.focus();
             }
-            // Speak instructions
-            speak("Welcome to Saarthi. Press E to speak your email. Press P to speak your PIN. Press S to submit by voice. Use Arrow keys to switch between Sign In and Sign Up.");
+            // Speak instructions only if screen reader mode is OFF
+            speakIfNoScreenReader("Welcome to Saarthi. Press E to speak your email. Press P to speak your PIN. Press S to submit by voice. Use Arrow keys to switch between Sign In and Sign Up.");
         }
     }, [started]);
 
@@ -293,12 +411,12 @@ const Auth = () => {
                 ref={welcomeRef}
                 role="main"
                 aria-labelledby="welcome-heading"
-                className="min-h-screen bg-black text-yellow-400 flex flex-col items-center justify-center p-6 text-center cursor-pointer"
+                className="min-h-screen bg-black text-yellow-400 flex flex-col items-center justify-center p-6 text-center"
                 tabIndex={-1}
-                onClick={() => setStarted(true)}
+                onClick={handleFirstInteraction}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
-                        setStarted(true);
+                        handleFirstInteraction(e);
                     }
                 }}
             >
@@ -309,7 +427,7 @@ const Auth = () => {
                     aria-atomic="true"
                     className="sr-only"
                 >
-                    Welcome to Saarthi! Press Enter or Space to start. Then swipe right for sign up or swipe left for sign in.
+                    Welcome to Saarthi! Click the Start button or say Start to begin.
                 </div>
 
                 <h1
@@ -320,8 +438,12 @@ const Auth = () => {
                 >
                     Welcome to Saarthi!
                 </h1>
-                <p className="text-3xl animate-pulse" aria-hidden="true">Click anywhere or Press Enter or Space to start</p>
-                <p className="sr-only">Press Enter or Space to start the application</p>
+                <p className="text-3xl animate-pulse" aria-hidden="true">
+                    {hasInteracted ? 'Click Start or say Start to continue' : 'Click anywhere to hear instructions'}
+                </p>
+                <p className="sr-only">
+                    {hasInteracted ? 'Click the Start button or say Start to continue' : 'Click anywhere to hear instructions'}
+                </p>
                 <button
                     className="mt-8 px-8 py-4 bg-yellow-400 text-black text-2xl font-bold rounded-xl focus:ring-4 focus:ring-yellow-200"
                     aria-label="Start Saarthi application"
@@ -332,6 +454,28 @@ const Auth = () => {
                 >
                     Start
                 </button>
+
+                {/* Screen Reader Toggle */}
+                <div className="mt-8 flex items-center gap-4 bg-gray-900 p-4 rounded-xl border-2 border-yellow-400">
+                    <Accessibility className="h-8 w-8" aria-hidden="true" />
+                    <label htmlFor="sr-toggle" className="text-xl cursor-pointer flex-1 text-left">
+                        I use a Screen Reader (NVDA/JAWS)
+                    </label>
+                    <button
+                        id="sr-toggle"
+                        role="switch"
+                        aria-checked={screenReaderMode}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleScreenReaderMode();
+                        }}
+                        className={`w-16 h-8 rounded-full transition-colors ${screenReaderMode ? 'bg-green-500' : 'bg-gray-600'}`}
+                        aria-label={screenReaderMode ? 'Screen reader mode is on' : 'Screen reader mode is off'}
+                    >
+                        <span className={`block w-6 h-6 bg-white rounded-full transform transition-transform ${screenReaderMode ? 'translate-x-9' : 'translate-x-1'}`} />
+                    </button>
+                </div>
+                <p className="mt-2 text-yellow-200 text-lg">Enable this to prevent double announcements</p>
             </main>
         );
     }

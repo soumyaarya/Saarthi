@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, Type, Volume2, VolumeX } from 'lucide-react';
+import { Sun, Moon, Type, Volume2, VolumeX, Accessibility } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -11,7 +11,7 @@ export default function AccessibilitySettings({
     settings,
     onSettingsChange
 }) {
-    const { highContrast, fontSize, voiceEnabled } = settings;
+    const { highContrast, fontSize, voiceEnabled, screenReaderMode } = settings;
 
     const handleContrastToggle = () => {
         const newValue = !highContrast;
@@ -28,9 +28,15 @@ export default function AccessibilitySettings({
     const handleVoiceToggle = () => {
         const newValue = !voiceEnabled;
         onSettingsChange({ ...settings, voiceEnabled: newValue });
-        if (newValue) {
+        if (newValue && !screenReaderMode) {
             speak('Voice feedback enabled');
         }
+    };
+
+    const handleScreenReaderToggle = () => {
+        const newValue = !screenReaderMode;
+        onSettingsChange({ ...settings, screenReaderMode: newValue });
+        // Don't speak here - screen reader will read the toggle state
     };
 
     const fontSizeLabel = fontSize <= 16 ? 'Normal' : fontSize <= 20 ? 'Large' : 'Extra Large';
@@ -131,6 +137,28 @@ export default function AccessibilitySettings({
                 </div>
                 < p id="voice-description" className="text-sm text-muted-foreground -mt-2 ml-8" >
                     Reads actions and content aloud
+                </p>
+
+                {/* Screen Reader Mode Toggle */}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <Accessibility className="h-5 w-5" aria-hidden="true" />
+                        <Label
+                            htmlFor="screenreader-toggle"
+                            className="text-base font-medium cursor-pointer"
+                        >
+                            I use a Screen Reader
+                        </Label>
+                    </div>
+                    <Switch
+                        id="screenreader-toggle"
+                        checked={screenReaderMode}
+                        onCheckedChange={handleScreenReaderToggle}
+                        aria-describedby="screenreader-description"
+                    />
+                </div>
+                <p id="screenreader-description" className="text-sm text-muted-foreground -mt-2 ml-8">
+                    Enable if using NVDA/JAWS to prevent double announcements
                 </p>
             </CardContent>
         </Card>
