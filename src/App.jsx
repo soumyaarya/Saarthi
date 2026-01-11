@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import Assignments from './pages/Assignments'
 import AssignmentDetail from './pages/AssignmentDetail'
+import Notes from './pages/Notes'
 import UserNotRegisteredError from './components/UserNotRegisteredError'
 import Auth from './pages/Auth'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -20,6 +21,7 @@ function App() {
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/assignments" element={<Assignments />} />
                         <Route path="/assignment" element={<AssignmentDetail />} />
+                        <Route path="/notes" element={<Notes />} />
                         <Route path="/error" element={<UserNotRegisteredError />} />
                     </Routes>
                 </BrowserRouter>

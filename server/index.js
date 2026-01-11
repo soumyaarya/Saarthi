@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 
 import userRoutes from './routes/authRoutes.js';
 import assignmentRoutes from './routes/assignmentRoutes.js';
+import noteRoutes from './routes/noteRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 import path from 'path';
@@ -28,6 +29,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', userRoutes);
 app.use('/api/assignments', assignmentRoutes);
+app.use('/api/notes', noteRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

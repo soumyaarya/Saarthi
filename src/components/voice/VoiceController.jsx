@@ -25,7 +25,9 @@ export function stopSpeaking() {
 export function getMenuText(pathname) {
     let menuText = `Available commands: 
         Say "create assignment" to add a new assignment.
-        Say "open assignments" to view your assignments. 
+        Say "open assignments" to view your assignments.
+        Say "open notes" or "my notes" to view your notes.
+        Say "create note" to add a new note.
         Say "open dashboard" to go to the dashboard. 
         Say "read page" to hear the current page content. 
         Say "go back" to navigate back.
@@ -33,6 +35,10 @@ export function getMenuText(pathname) {
 
     if (pathname === '/assignments' || pathname.includes('assignment')) {
         menuText += ` Say "mark complete" to complete first pending assignment. Say "mark pending" to undo.`;
+    }
+
+    if (pathname === '/notes') {
+        menuText += ` Say a note title to hear its content. Say "delete" followed by the title to delete a note.`;
     }
 
     menuText += ` Say "stop speaking" to stop audio.`;
@@ -96,6 +102,30 @@ export default function VoiceController({ voiceEnabled, onCommand }) {
             lowerCommand === 'assignments') {
             speak('Opening assignments');
             navigate(createPageUrl('Assignments'));
+            return;
+        }
+
+        // Notes navigation
+        if (lowerCommand.includes('open note') ||
+            lowerCommand.includes('my note') ||
+            lowerCommand.includes('view note') ||
+            lowerCommand === 'notes') {
+            speak('Opening notes');
+            navigate(createPageUrl('Notes'));
+            return;
+        }
+
+        // Create note - also handle just "note" as it might mean create
+        if (lowerCommand.includes('create note') ||
+            lowerCommand.includes('new note') ||
+            lowerCommand.includes('add note') ||
+            lowerCommand === 'note' ||
+            (lowerCommand.includes('note') && (lowerCommand.includes('create') || lowerCommand.includes('new') || lowerCommand.includes('add')))) {
+            speak('Opening create note form.');
+            if (onCommand) {
+                onCommand('create_note');
+            }
+            navigate(createPageUrl('Notes'));
             return;
         }
 

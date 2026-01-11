@@ -13,6 +13,8 @@ export function createPageUrl(page) {
             return '/assignments';
         case 'AssignmentDetail':
             return '/assignment';
+        case 'Notes':
+            return '/notes';
         default:
             return '/';
     }

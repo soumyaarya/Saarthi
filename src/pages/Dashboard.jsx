@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { BookOpen, Calendar, CheckCircle2, Clock, Settings, Volume2, Plus, LogOut } from 'lucide-react';
+import { BookOpen, Calendar, CheckCircle2, Clock, Settings, Volume2, Plus, LogOut, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -294,6 +294,7 @@ export default function Dashboard() {
                             className="block focus:outline-none focus:ring-4 focus:ring-indigo-300 rounded-lg"
                             aria-label="View all assignments"
                             onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('View assignments button')}
+                            onMouseEnter={() => settings.voiceEnabled && !settings.screenReaderMode && speak('View Assignments')}
                         >
                             <Card className="border-2 hover:border-indigo-500 hover:shadow-lg transition-all cursor-pointer">
                                 <CardContent className="p-6 flex items-center gap-4">
@@ -314,6 +315,7 @@ export default function Dashboard() {
                             tabIndex={0}
                             aria-label="View calendar"
                             onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Calendar button')}
+                            onMouseEnter={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Calendar')}
                         >
                             <CardContent className="p-6 flex items-center gap-4">
                                 <div className="p-3 bg-purple-100 rounded-full">
@@ -335,6 +337,7 @@ export default function Dashboard() {
                             onClick={openCreateModal}
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openCreateModal(); }}
                             onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Create new assignment button')}
+                            onMouseEnter={() => settings.voiceEnabled && !settings.screenReaderMode && speak('Create Assignment')}
                         >
                             <CardContent className="p-6 flex items-center gap-4">
                                 <div className="p-3 bg-green-100 rounded-full">
@@ -346,6 +349,27 @@ export default function Dashboard() {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* My Notes Button */}
+                        <Link
+                            to={createPageUrl('Notes')}
+                            className="block focus:outline-none focus:ring-4 focus:ring-indigo-300 rounded-lg"
+                            aria-label="View my notes"
+                            onFocus={() => settings.voiceEnabled && !settings.screenReaderMode && speak('My notes button')}
+                            onMouseEnter={() => settings.voiceEnabled && !settings.screenReaderMode && speak('My Notes')}
+                        >
+                            <Card className="border-2 hover:border-amber-500 hover:shadow-lg transition-all cursor-pointer">
+                                <CardContent className="p-6 flex items-center gap-4">
+                                    <div className="p-3 bg-amber-100 rounded-full">
+                                        <FileText className="h-6 w-6 text-amber-600" aria-hidden="true" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-lg">My Notes</h3>
+                                        <p className="text-sm text-muted-foreground">Voice-controlled notes</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
                     </div>
                 </section>
 
