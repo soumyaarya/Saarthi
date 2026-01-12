@@ -101,9 +101,9 @@ export default function Dashboard() {
     const createAssignmentMutation = useMutation({
         mutationFn: async (assignmentData) => {
             const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-            const response = await axios.post('http://localhost:5000/api/assignments', {
-                ...assignmentData,
-                userId: userInfo._id
+            const authHeaders = userInfo.token ? { Authorization: `Bearer ${userInfo.token}` } : {};
+            const response = await axios.post('http://localhost:5000/api/assignments', assignmentData, {
+                headers: authHeaders
             });
             return response.data;
         },

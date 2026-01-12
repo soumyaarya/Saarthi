@@ -2,14 +2,11 @@ import Assignment from '../models/Assignment.js';
 
 // @desc    Get assignments for a user
 // @route   GET /api/assignments
-// @access  Public (should be private in prod, using query user_id for now)
+// @access  Private (requires JWT token)
 const getAssignments = async (req, res, next) => {
     try {
-        const { userId } = req.query;
-        if (!userId) {
-            res.status(400);
-            throw new Error('User ID is required');
-        }
+        // Get user ID from authenticated user (set by protect middleware)
+        const userId = req.user._id;
 
         const assignments = await Assignment.find({ userId }).sort({ createdAt: -1 });
         res.json(assignments);
@@ -20,14 +17,16 @@ const getAssignments = async (req, res, next) => {
 
 // @desc    Create new assignment
 // @route   POST /api/assignments
-// @access  Public
+// @access  Private (requires JWT token)
 const createAssignment = async (req, res, next) => {
     try {
-        const { userId, title, subject, dueDate, priority, description } = req.body;
+        const { title, subject, dueDate, priority, description } = req.body;
+        // Get user ID from authenticated user (set by protect middleware)
+        const userId = req.user._id;
 
-        if (!userId || !title || !subject) {
+        if (!title || !subject) {
             res.status(400);
-            throw new Error('Please add all required fields');
+            throw new Error('Please add all required fields (title, subject)');
         }
 
         const assignment = await Assignment.create({
@@ -47,7 +46,7 @@ const createAssignment = async (req, res, next) => {
 
 // @desc    Update assignment
 // @route   PUT /api/assignments/:id
-// @access  Public
+// @access  Private (requires JWT token)
 const updateAssignment = async (req, res, next) => {
     try {
         const assignment = await Assignment.findById(req.params.id);
@@ -57,7 +56,11 @@ const updateAssignment = async (req, res, next) => {
             throw new Error('Assignment not found');
         }
 
-        // Check for user match could go here if we had auth middleware
+        // Verify ownership - user can only update their own assignments
+        if (assignment.userId.toString() !== req.user._id.toString()) {
+            res.status(401);
+            throw new Error('Not authorized to update this assignment');
+        }
 
         const updatedAssignment = await Assignment.findByIdAndUpdate(
             req.params.id,
@@ -73,7 +76,7 @@ const updateAssignment = async (req, res, next) => {
 
 // @desc    Delete assignment
 // @route   DELETE /api/assignments/:id
-// @access  Public
+// @access  Private (requires JWT token)
 const deleteAssignment = async (req, res, next) => {
     try {
         const assignment = await Assignment.findById(req.params.id);
@@ -83,12 +86,19 @@ const deleteAssignment = async (req, res, next) => {
             throw new Error('Assignment not found');
         }
 
-        await assignment.remove();
+        // Verify ownership - user can only delete their own assignments
+        if (assignment.userId.toString() !== req.user._id.toString()) {
+            res.status(401);
+            throw new Error('Not authorized to delete this assignment');
+        }
 
-        res.json({ id: req.params.id });
+        await Assignment.findByIdAndDelete(req.params.id);
+
+        res.json({ id: req.params.id, message: 'Assignment deleted' });
     } catch (error) {
         next(error);
     }
 };
 
 export { getAssignments, createAssignment, updateAssignment, deleteAssignment };
+

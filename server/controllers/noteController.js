@@ -2,14 +2,11 @@ import Note from '../models/Note.js';
 
 // @desc    Get notes for a user
 // @route   GET /api/notes
-// @access  Public
+// @access  Private (requires JWT token)
 const getNotes = async (req, res, next) => {
     try {
-        const { userId } = req.query;
-        if (!userId) {
-            res.status(400);
-            throw new Error('User ID is required');
-        }
+        // Get user ID from authenticated user (set by protect middleware)
+        const userId = req.user._id;
 
         const notes = await Note.find({ userId }).sort({ createdAt: -1 });
         res.json(notes);
@@ -20,14 +17,16 @@ const getNotes = async (req, res, next) => {
 
 // @desc    Create new note
 // @route   POST /api/notes
-// @access  Public
+// @access  Private (requires JWT token)
 const createNote = async (req, res, next) => {
     try {
-        const { userId, title, content } = req.body;
+        const { title, content } = req.body;
+        // Get user ID from authenticated user (set by protect middleware)
+        const userId = req.user._id;
 
-        if (!userId || !title || !content) {
+        if (!title || !content) {
             res.status(400);
-            throw new Error('Please add all required fields (userId, title, content)');
+            throw new Error('Please add all required fields (title, content)');
         }
 
         const note = await Note.create({
@@ -44,7 +43,7 @@ const createNote = async (req, res, next) => {
 
 // @desc    Update note
 // @route   PUT /api/notes/:id
-// @access  Public
+// @access  Private (requires JWT token)
 const updateNote = async (req, res, next) => {
     try {
         const note = await Note.findById(req.params.id);
@@ -52,6 +51,12 @@ const updateNote = async (req, res, next) => {
         if (!note) {
             res.status(404);
             throw new Error('Note not found');
+        }
+
+        // Verify ownership - user can only update their own notes
+        if (note.userId.toString() !== req.user._id.toString()) {
+            res.status(401);
+            throw new Error('Not authorized to update this note');
         }
 
         const updatedNote = await Note.findByIdAndUpdate(
@@ -68,7 +73,7 @@ const updateNote = async (req, res, next) => {
 
 // @desc    Delete note
 // @route   DELETE /api/notes/:id
-// @access  Public
+// @access  Private (requires JWT token)
 const deleteNote = async (req, res, next) => {
     try {
         const note = await Note.findById(req.params.id);
@@ -76,6 +81,12 @@ const deleteNote = async (req, res, next) => {
         if (!note) {
             res.status(404);
             throw new Error('Note not found');
+        }
+
+        // Verify ownership - user can only delete their own notes
+        if (note.userId.toString() !== req.user._id.toString()) {
+            res.status(401);
+            throw new Error('Not authorized to delete this note');
         }
 
         await Note.findByIdAndDelete(req.params.id);
@@ -87,3 +98,4 @@ const deleteNote = async (req, res, next) => {
 };
 
 export { getNotes, createNote, updateNote, deleteNote };
+

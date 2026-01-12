@@ -49,10 +49,16 @@ export default function Assignments() {
         }
     });
 
+    // Get auth headers for API calls
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const authHeaders = userInfo.token ? { Authorization: `Bearer ${userInfo.token}` } : {};
+
     // Status update mutation
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id, status }) => {
-            const response = await axios.put(`http://localhost:5000/api/assignments/${id}`, { status });
+            const response = await axios.put(`http://localhost:5000/api/assignments/${id}`, { status }, {
+                headers: authHeaders
+            });
             return response.data;
         },
         onSuccess: (data, variables) => {

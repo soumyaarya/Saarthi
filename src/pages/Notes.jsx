@@ -33,26 +33,28 @@ export default function Notes() {
     const mainHeadingRef = useRef(null);
     const queryClient = useQueryClient();
 
-    // Get user info
+    // Get user info and auth headers
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const authHeaders = userInfo.token ? { Authorization: `Bearer ${userInfo.token}` } : {};
 
     // Fetch notes
     const { data: notes = [], isLoading } = useQuery({
         queryKey: ['notes'],
         queryFn: async () => {
-            if (!userInfo._id) return [];
-            const response = await axios.get(`http://localhost:5000/api/notes?userId=${userInfo._id}`);
+            if (!userInfo.token) return [];
+            const response = await axios.get('http://localhost:5000/api/notes', {
+                headers: authHeaders
+            });
             return response.data;
         },
-        enabled: !!userInfo._id
+        enabled: !!userInfo.token
     });
 
     // Create note mutation
     const createMutation = useMutation({
         mutationFn: async (noteData) => {
-            const response = await axios.post('http://localhost:5000/api/notes', {
-                ...noteData,
-                userId: userInfo._id
+            const response = await axios.post('http://localhost:5000/api/notes', noteData, {
+                headers: authHeaders
             });
             return response.data;
         },
@@ -72,7 +74,9 @@ export default function Notes() {
     // Delete note mutation
     const deleteMutation = useMutation({
         mutationFn: async (noteId) => {
-            const response = await axios.delete(`http://localhost:5000/api/notes/${noteId}`);
+            const response = await axios.delete(`http://localhost:5000/api/notes/${noteId}`, {
+                headers: authHeaders
+            });
             return response.data;
         },
         onSuccess: () => {
