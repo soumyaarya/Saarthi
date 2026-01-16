@@ -11,6 +11,7 @@ import AccessibilitySettings from '@/components/accessibility/AccessibilitySetti
 import VoiceController, { speak } from '@/components/voice/VoiceController';
 import { format } from 'date-fns';
 import axios from 'axios';
+import { API_ENDPOINTS } from '@/config/api';
 
 export default function Notes() {
     const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function Notes() {
         queryKey: ['notes'],
         queryFn: async () => {
             if (!userInfo.token) return [];
-            const response = await axios.get('http://localhost:5000/api/notes', {
+            const response = await axios.get(API_ENDPOINTS.NOTES, {
                 headers: authHeaders
             });
             return response.data;
@@ -53,7 +54,7 @@ export default function Notes() {
     // Create note mutation
     const createMutation = useMutation({
         mutationFn: async (noteData) => {
-            const response = await axios.post('http://localhost:5000/api/notes', noteData, {
+            const response = await axios.post(API_ENDPOINTS.NOTES, noteData, {
                 headers: authHeaders
             });
             return response.data;
@@ -74,7 +75,7 @@ export default function Notes() {
     // Delete note mutation
     const deleteMutation = useMutation({
         mutationFn: async (noteId) => {
-            const response = await axios.delete(`http://localhost:5000/api/notes/${noteId}`, {
+            const response = await axios.delete(`${API_ENDPOINTS.NOTES}/${noteId}`, {
                 headers: authHeaders
             });
             return response.data;

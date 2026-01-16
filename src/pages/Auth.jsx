@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, ArrowRight, ArrowLeft, Accessibility } from 'lucide-react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '@/config/api';
 
 const Auth = () => {
     const navigate = useNavigate();
@@ -377,7 +378,7 @@ const Auth = () => {
         }
 
         try {
-            const endpoint = mode === 'signup' ? 'http://localhost:5000/api/auth/signup' : 'http://localhost:5000/api/auth/login';
+            const endpoint = mode === 'signup' ? `${API_ENDPOINTS.AUTH}/signup` : `${API_ENDPOINTS.AUTH}/login`;
             const payload = mode === 'signup' ? { email, pin, name: 'User' } : { email, pin };
 
             const res = await axios.post(endpoint, payload);

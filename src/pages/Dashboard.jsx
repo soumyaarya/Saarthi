@@ -13,6 +13,7 @@ import AccessibilitySettings from '@/components/accessibility/AccessibilitySetti
 import VoiceController, { speak } from '@/components/voice/VoiceController';
 import { format } from 'date-fns';
 import axios from 'axios';
+import { API_ENDPOINTS } from '@/config/api';
 
 const DEFAULT_SETTINGS = {
     highContrast: false,
@@ -102,7 +103,7 @@ export default function Dashboard() {
         mutationFn: async (assignmentData) => {
             const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
             const authHeaders = userInfo.token ? { Authorization: `Bearer ${userInfo.token}` } : {};
-            const response = await axios.post('http://localhost:5000/api/assignments', assignmentData, {
+            const response = await axios.post(API_ENDPOINTS.ASSIGNMENTS, assignmentData, {
                 headers: authHeaders
             });
             return response.data;

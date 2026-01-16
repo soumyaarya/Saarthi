@@ -14,6 +14,7 @@ import AccessibilitySettings from '@/components/accessibility/AccessibilitySetti
 import VoiceController, { speak } from '@/components/voice/VoiceController';
 import { format } from 'date-fns';
 import axios from 'axios';
+import { API_ENDPOINTS } from '@/config/api';
 
 export default function Assignments() {
     const navigate = useNavigate();
@@ -56,7 +57,7 @@ export default function Assignments() {
     // Status update mutation
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id, status }) => {
-            const response = await axios.put(`http://localhost:5000/api/assignments/${id}`, { status }, {
+            const response = await axios.put(`${API_ENDPOINTS.ASSIGNMENTS}/${id}`, { status }, {
                 headers: authHeaders
             });
             return response.data;
