@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_ENDPOINTS } from '@/config/api';
 
-const API_URL = 'http://localhost:5000/api/assignments';
+const API_URL = API_ENDPOINTS.ASSIGNMENTS;
 
 // Helper to get auth headers with JWT token
 const getAuthHeaders = () => {
